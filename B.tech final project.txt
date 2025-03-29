@@ -1,0 +1,62 @@
+#include <DHT.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+#define DHTPIN 2
+#define DHTTYPE DHT11 // Change to DHT22 if needed
+#define SOIL_MOISTURE_PIN A0
+#define RELAY_PIN 7
+
+DHT dht(DHTPIN, DHTTYPE);
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+void setup() {
+    Serial.begin(9600);
+    dht.begin();
+    lcd.begin();
+    lcd.backlight();
+    pinMode(SOIL_MOISTURE_PIN, INPUT);
+    pinMode(RELAY_PIN, OUTPUT);
+}
+
+void loop() {
+    float temp = dht.readTemperature();
+    float hum = dht.readHumidity();
+    int soilMoisture = analogRead(SOIL_MOISTURE_PIN);
+
+    Serial.print("Temperature: ");
+    Serial.print(temp);
+    Serial.print(" *C, Humidity: ");
+    Serial.print(hum);
+    Serial.print("%, Soil Moisture: ");
+    Serial.println(soilMoisture);
+
+    lcd.setCursor(0, 0);
+    lcd.print("Temp: ");
+    lcd.print(temp);
+    lcd.print("C");
+    lcd.setCursor(0, 1);
+    lcd.print("Humidity: ");
+    lcd.print(hum);
+    lcd.print("%");
+    delay(2000);
+    lcd.clear();
+
+    lcd.setCursor(0, 0);
+    lcd.print("Soil: ");
+    lcd.print(soilMoisture);
+    lcd.print("%");
+    
+    if (soilMoisture < 500) {  // Adjust threshold as needed
+        digitalWrite(RELAY_PIN, HIGH);  // Turn ON pump
+        lcd.setCursor(0, 1);
+        lcd.print("Watering...");
+    } else {
+        digitalWrite(RELAY_PIN, LOW);   // Turn OFF pump
+        lcd.setCursor(0, 1);
+        lcd.print("Soil OK");
+    }
+
+    delay(5000); // Wait before next reading
+    lcd.clear();
+}
